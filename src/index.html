@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Music Intelligence Dashboard</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+
+        /* -----------------------------
+           GLOBAL
+        ----------------------------- */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0f0f1a;
+            color: white;
+            display: flex;
+        }
+
+        /* -----------------------------
+           SIDEBAR
+        ----------------------------- */
+        .sidebar {
+            width: 220px;
+            background: #141424;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .sidebar h2 {
+            color: #00ff88;
+        }
+
+        .sidebar div {
+            margin: 15px 0;
+            cursor: pointer;
+        }
+
+        /* -----------------------------
+           MAIN
+        ----------------------------- */
+        .main {
+            flex: 1;
+            padding: 20px;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .search {
+            width: 60%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+        }
+
+        /* CARDS */
+        .card {
+            background: #1c1c2e;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        /* GRID */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* RECOMMENDATIONS */
+        .rec-card {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .rec-card img {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+        }
+
+        /* STATS */
+        .stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .stat {
+            flex: 1;
+            background: #1c1c2e;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <h2>Music AI</h2>
+    <div>Dashboard</div>
+    <div>Analytics</div>
+    <div>Recommendations</div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+    <!-- HEADER -->
+    <div class="header">
+        <input class="search" id="searchInput" placeholder="Search song or artist...">
+        <button onclick="search()">Search</button>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+        <div class="stat">Songs<br><b>12,000</b></div>
+        <div class="stat">Artists<br><b>2,400</b></div>
+        <div class="stat">Edges<br><b>45,000</b></div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid">
+
+        <!-- RECOMMENDATIONS -->
+        <div class="card">
+            <h3>Recommendations</h3>
+            <div id="recommendations"></div>
+        </div>
+
+        <!-- CHART -->
+        <div class="card">
+            <h3>Top Recommendations</h3>
+            <canvas id="chart"></canvas>
+        </div>
+
+        <!-- GENRE -->
+        <div class="card">
+            <h3>Genre Distribution</h3>
+            <canvas id="genreChart"></canvas>
+        </div>
+
+        <!-- ARTISTS -->
+        <div class="card">
+            <h3>Top Artists</h3>
+            <canvas id="artistChart"></canvas>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    /* -----------------------------
+       FETCH ALBUM ART (AUTO)
+    ----------------------------- */
+    async function fetchAlbumArt(song, artist) {
+
+        const query = encodeURIComponent(song + " " + artist);
+
+        const url = `https://itunes.apple.com/search?term=${query}&entity=song&limit=1`;
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.results.length > 0) {
+                return data.results[0].artworkUrl100;
+            }
+        } catch (e) {}
+
+        return "https://via.placeholder.com/100";
+    }
+
+    /* -----------------------------
+       SAMPLE DATA (TEMP)
+    ----------------------------- */
+    const sampleRecs = [
+        { song: "Blinding Lights", artist: "The Weeknd", score: 0.94 },
+        { song: "Levitating", artist: "Dua Lipa", score: 0.92 },
+        { song: "Save Your Tears", artist: "The Weeknd", score: 0.91 }
+    ];
+
+    /* -----------------------------
+       BUILD RECOMMENDATIONS
+    ----------------------------- */
+    async function buildRecs(recs) {
+
+        const container = document.getElementById("recommendations");
+        container.innerHTML = "";
+
+        for (let r of recs) {
+
+            const img = await fetchAlbumArt(r.song, r.artist);
+
+            const div = document.createElement("div");
+            div.className = "rec-card";
+
+            div.innerHTML = `
+      <img src="${img}">
+      <div>
+        <div>${r.song}</div>
+        <div style="opacity:0.6">${r.artist}</div>
+        <div style="color:#00ff88">${r.score}</div>
+      </div>
+    `;
+
+            container.appendChild(div);
+        }
+    }
+
+    /* -----------------------------
+       CHARTS
+    ----------------------------- */
+    function buildCharts() {
+
+        new Chart(document.getElementById("chart"), {
+            type: "bar",
+            data: {
+                labels: ["Song1","Song2","Song3"],
+                datasets: [{
+                    label: "Score",
+                    data: [0.9,0.85,0.8]
+                }]
+            }
+        });
+
+        new Chart(document.getElementById("genreChart"), {
+            type: "pie",
+            data: {
+                labels: ["Pop","Hip-Hop","Rock"],
+                datasets: [{
+                    data: [40,30,30]
+                }]
+            }
+        });
+
+        new Chart(document.getElementById("artistChart"), {
+            type: "bar",
+            data: {
+                labels: ["Drake","Weeknd","Taylor"],
+                datasets: [{
+                    data: [10,8,6]
+                }]
+            }
+        });
+    }
+
+    /* -----------------------------
+       SEARCH (TEMP)
+    ----------------------------- */
+    function search() {
+        buildRecs(sampleRecs);
+    }
+
+    /* INIT */
+    buildCharts();
+
+</script>
+
+</body>
+</html>

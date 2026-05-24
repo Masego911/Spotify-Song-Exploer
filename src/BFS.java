@@ -1,36 +1,47 @@
-import java.util.*;
+import java.util.*; // import collections
 
+/*
+ * BFS (Breadth-First Search)
+ *
+ * PURPOSE:
+ * Traverse graph level by level starting from a node
+ */
 public class BFS {
 
-    private Graph graph;
+    private Graph graph; // reference to graph
 
     public BFS(Graph graph) {
-        this.graph = graph;
+        this.graph = graph; // store graph
     }
 
     public void bfs(Vertex start) {
 
-        Set<Vertex> visited = new HashSet<>();
-        Queue<Vertex> queue = new LinkedList<>();
+        Set<Vertex> visited = new HashSet<>(); // track visited nodes
 
-        visited.add(start);
-        queue.add(start);
+        Queue<Vertex> queue = new LinkedList<>(); // FIFO structure
 
-        while (!queue.isEmpty()) {
+        visited.add(start); // mark start as visited
+        queue.add(start);   // enqueue start
 
-            Vertex current = queue.poll();
+        while (!queue.isEmpty()) { // loop until queue empty
 
+            Vertex current = queue.poll(); // remove next node
+
+            // PROCESS NODE
             System.out.println(
                     current.getSong().getTitle() + " by " +
                             current.getSong().getArtist()
             );
 
-            for (Vertex neighbour : graph.getAdjacencyList().get(current)) {
+            // GET NEIGHBOURS SAFELY
+            for (Vertex neighbour :
+                    graph.getAdjacencyList().getOrDefault(current, new ArrayList<>())) {
 
+                // CHECK IF NOT VISITED
                 if (!visited.contains(neighbour)) {
 
-                    visited.add(neighbour);
-                    queue.add(neighbour);
+                    visited.add(neighbour); // mark visited
+                    queue.add(neighbour);   // enqueue
                 }
             }
         }
