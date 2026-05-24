@@ -2,9 +2,10 @@ import java.util.*;
 
 public class EdgeBuilder {
 
-    private int k;
+    private final int k;
 
     public EdgeBuilder(int k) {
+        if (k < 0) throw new IllegalArgumentException("k must be non-negative");
         this.k = k;
     }
 
@@ -14,50 +15,28 @@ public class EdgeBuilder {
 
         for (Vertex v : vertices) {
 
-            List<Similarity> sims = new ArrayList<>();
+            PriorityQueue<Similarity> nearest = new PriorityQueue<>(Comparator
+                    .comparingDouble((Similarity similarity) -> similarity.score)
+                    .thenComparingInt(similarity -> -similarity.vertex.getSong().getId()));
 
             for (Vertex u : vertices) {
 
-                if (v == u) continue;
-
-                double score = similarity(v.getSong(), u.getSong());
-
-                sims.add(new Similarity(u, score));
+                if (v.equals(u)) continue;
+                nearest.offer(new Similarity(u, SimilarityCalculator.between(v.getSong(), u.getSong())));
+                if (nearest.size() > k) nearest.poll();
             }
-
-            sims.sort((a, b) -> Double.compare(b.score, a.score));
-
-            for (int i = 0; i < Math.min(k, sims.size()); i++) {
-
-                Vertex neighbour = sims.get(i).vertex;
-
-                graph.addEdges(v, neighbour); // graph prevents duplicates
-            }
+            List<Similarity> ordered = new ArrayList<>(nearest);
+            ordered.sort(Comparator.comparingDouble((Similarity similarity) -> similarity.score)
+                    .reversed()
+                    .thenComparingInt(similarity -> similarity.vertex.getSong().getId()));
+            for (Similarity similarity : ordered) graph.addEdges(v, similarity.vertex);
         }
-    }
-
-    private double similarity(Song a, Song b) {
-
-        // STREAM SIMILARITY
-        long s1 = a.getStreams();
-        long s2 = b.getStreams();
-
-        long max = Math.max(s1, s2);
-        double streamSim = (max == 0) ? 0 : 1.0 - (Math.abs(s1 - s2) / (double) max);
-
-        // ARTIST
-        double artistSim = a.getArtist().equalsIgnoreCase(b.getArtist()) ? 1.0 : 0.0;
-
-        // GENRE
-        double genreSim = a.getGenre().equalsIgnoreCase(b.getGenre()) ? 1.0 : 0.0;
-
-        return (0.5 * streamSim) + (0.3 * artistSim) + (0.2 * genreSim);
     }
 
     private static class Similarity {
 
-        Vertex vertex;
-        double score;
+        final Vertex vertex;
+        final double score;
 
         public Similarity(Vertex v, double s) {
             this.vertex = v;

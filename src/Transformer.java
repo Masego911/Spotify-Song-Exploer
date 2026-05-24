@@ -7,35 +7,18 @@ public class Transformer {
 
         List<Song> songs = new ArrayList<>();
 
-        if (rawData == null || rawData.isEmpty()) {
-            System.out.println("ERROR: No data loaded.");
-            return songs;
-        }
+        if (rawData == null || rawData.isEmpty()) return songs;
 
         String[] header = rawData.get(0);
 
-        System.out.println("HEADER:");
-        System.out.println(java.util.Arrays.toString(header));
-
-        int titleIndex = findIndex(header, "track");
-        if (titleIndex == -1) titleIndex = findIndex(header, "name");
-
-        int artistIndex = findIndex(header, "artist");
-        int streamsIndex = findIndex(header, "spotify streams"); // more precise
-        int genreIndex = findIndex(header, "genre"); // may be -1
-
-        System.out.println("\nIndexes:");
-        System.out.println("title: " + titleIndex);
-        System.out.println("artist: " + artistIndex);
-        System.out.println("streams: " + streamsIndex);
-        System.out.println("genre: " + genreIndex);
+        int titleIndex = findIndex(header, "track", "track name", "name", "title");
+        int artistIndex = findIndex(header, "artist", "artist name");
+        int streamsIndex = findIndex(header, "spotify streams", "streams");
+        int genreIndex = findIndex(header, "genre");
 
         if (titleIndex == -1 || artistIndex == -1 || streamsIndex == -1) {
-            System.out.println("ERROR: Required columns not found.");
-            return songs;
+            throw new IllegalArgumentException("CSV requires track, artist, and Spotify Streams columns");
         }
-
-        int id = 1;
 
         for (int i = 1; i < rawData.size(); i++) {
 
@@ -50,6 +33,7 @@ public class Transformer {
 
                 String title = clean(row[titleIndex]);
                 String artist = clean(row[artistIndex]);
+                if (title.isEmpty() || artist.isEmpty()) continue;
 
                 String streamStr = clean(row[streamsIndex]).replaceAll("[^0-9]", "");
 
@@ -67,35 +51,32 @@ public class Transformer {
                     if (genre.isEmpty()) genre = "Unknown";
                 }
 
-                Song song = new Song(id++, title, artist, streams, genre);
+                Song song = new Song(i, title, artist, streams, genre);
 
                 songs.add(song);
 
-            } catch (Exception e) {
-
-                System.out.println("Skipping row: " + java.util.Arrays.toString(row));
-                System.out.println("Reason: " + e.getMessage());
+            } catch (NumberFormatException e) {
+                // Rows without a valid Spotify stream count cannot be ranked.
             }
         }
 
         return songs;
     }
 
-    private static int findIndex(String[] header, String keyword) {
+    private static int findIndex(String[] header, String... names) {
 
         for (int i = 0; i < header.length; i++) {
 
-            String col = header[i].toLowerCase().trim();
-
-            if (col.contains(keyword)) return i;
-
-            if (keyword.equals("track") && col.contains("name")) return i;
+            String col = clean(header[i]).replace("\uFEFF", "").toLowerCase();
+            for (String name : names) {
+                if (col.equals(name)) return i;
+            }
         }
 
         return -1;
     }
 
     private static String clean(String value) {
-        return value.replace("\"", "").trim();
+        return value == null ? "" : value.trim();
     }
 }

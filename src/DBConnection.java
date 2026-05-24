@@ -1,5 +1,6 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.SQLException;
 
 /*
  * DBConnection
@@ -9,12 +10,14 @@ import java.sql.DriverManager;
  */
 public class DBConnection {
 
-    public static Connection connect() throws Exception {
+    public static Connection connect() throws SQLException {
+        String databasePath = System.getProperty("spotify.db", "spotify.db");
+        Connection connection = DriverManager.getConnection("jdbc:sqlite:" + databasePath);
 
-        Class.forName("org.sqlite.JDBC"); // load driver
+        try (java.sql.Statement statement = connection.createStatement()) {
+            statement.execute("PRAGMA foreign_keys = ON");
+        }
 
-        String url = "jdbc:sqlite:spotify.db"; // database file
-
-        return DriverManager.getConnection(url); // return connection
+        return connection;
     }
 }

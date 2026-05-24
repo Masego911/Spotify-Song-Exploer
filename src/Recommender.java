@@ -15,6 +15,8 @@ public class Recommender {
     }
 
     public List<Vertex> getTopKRecommendations(Vertex source, int k) {
+        if (source == null) throw new IllegalArgumentException("source is required");
+        if (k < 0) throw new IllegalArgumentException("k must be non-negative");
 
         // get neighbours
         List<Vertex> neighbours = graph.getAdjacencyList().get(source);
@@ -27,13 +29,15 @@ public class Recommender {
 
         for (Vertex v : neighbours) {
 
-            double score = similarity(source.getSong(), v.getSong());
+            double score = SimilarityCalculator.between(source.getSong(), v.getSong());
 
             scored.add(new ScoredVertex(v, score));
         }
 
         // sort descending
-        scored.sort((a, b) -> Double.compare(b.score, a.score));
+        scored.sort(Comparator.comparingDouble((ScoredVertex value) -> value.score)
+                .reversed()
+                .thenComparingInt(value -> value.vertex.getSong().getId()));
 
         List<Vertex> results = new ArrayList<>();
 
@@ -42,25 +46,6 @@ public class Recommender {
         }
 
         return results;
-    }
-
-    // SAME LOGIC AS EDGE BUILDER (must stay consistent)
-    private double similarity(Song a, Song b) {
-
-        long s1 = a.getStreams();
-        long s2 = b.getStreams();
-
-        long max = Math.max(s1, s2);
-
-        double streamSim = (max == 0)
-                ? 0
-                : 1.0 - (Math.abs(s1 - s2) / (double) max);
-
-        double artistSim = a.getArtist().equalsIgnoreCase(b.getArtist()) ? 1.0 : 0.0;
-
-        double genreSim = a.getGenre().equalsIgnoreCase(b.getGenre()) ? 1.0 : 0.0;
-
-        return (0.5 * streamSim) + (0.3 * artistSim) + (0.2 * genreSim);
     }
 
     private static class ScoredVertex {

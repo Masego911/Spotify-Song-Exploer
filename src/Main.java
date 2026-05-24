@@ -1,6 +1,8 @@
 import java.util.List;     // for List interface
 import java.util.ArrayList; // for dynamic lists
 import java.util.Scanner; // for user input
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /*
  * MAIN CLASS
@@ -27,14 +29,10 @@ public class Main {
             // -----------------------------------------
             // STEP 2: RUN ETL (ONLY WHEN NEEDED)
             // -----------------------------------------
-            boolean runETL = false;
-
-            if (runETL) {
-
-                String filePath = "Most Streamed Spotify Songs 2024.csv";
-
+            String filePath = "Most Streamed Spotify Songs 2024.csv";
+            boolean importRequested = java.util.Arrays.asList(args).contains("--import");
+            if (importRequested) {
                 ETLPipeline.run(filePath);
-
                 System.out.println("ETL complete.");
             }
 
@@ -42,6 +40,11 @@ public class Main {
             // STEP 3: LOAD GRAPH
             // -----------------------------------------
             Graph graph = GraphLoader.loadGraph();
+            if (graph.getVertices().isEmpty() && Files.exists(Path.of(filePath))) {
+                System.out.println("Database is empty; importing the bundled dataset.");
+                ETLPipeline.run(filePath);
+                graph = GraphLoader.loadGraph();
+            }
 
             // -----------------------------------------
             // STEP 4: BUILD EDGES (k-NN)
@@ -68,7 +71,7 @@ public class Main {
             Scanner scanner = new Scanner(System.in);
 
             System.out.print("\nEnter artist or song: ");
-            String search = scanner.nextLine();
+            String search = scanner.hasNextLine() ? scanner.nextLine() : "";
 
             List<Vertex> matches = findVertices(graph, search);
 
@@ -94,11 +97,7 @@ public class Main {
 
                 System.out.print("\nSelect option (1-" + matches.size() + "): ");
 
-                int choice = scanner.nextInt();
-
-                if (choice < 1 || choice > matches.size()) {
-                    choice = 1;
-                }
+                int choice = readChoice(scanner, matches.size());
 
                 start = matches.get(choice - 1);
             }
@@ -130,18 +129,35 @@ public class Main {
             // -----------------------------------------
             // STEP 9: DFS
             // -----------------------------------------
-            System.out.println("\nDFS Traversal:");
-            new DFS(graph).dfs(start);
+            int traversalLimit = 25;
+            System.out.println("\nDFS Traversal (first " + traversalLimit + "):");
+            printVertices(new DFS(graph).traverse(start, traversalLimit));
 
             // -----------------------------------------
             // STEP 10: BFS
             // -----------------------------------------
-            System.out.println("\nBFS Traversal:");
-            new BFS(graph).bfs(start);
+            System.out.println("\nBFS Traversal (first " + traversalLimit + "):");
+            printVertices(new BFS(graph).traverse(start, traversalLimit));
 
         } catch (Exception e) {
 
             e.printStackTrace();
+        }
+    }
+
+    private static int readChoice(Scanner scanner, int maximum) {
+        String input = scanner.hasNextLine() ? scanner.nextLine().trim() : "";
+        try {
+            int choice = Integer.parseInt(input);
+            return choice >= 1 && choice <= maximum ? choice : 1;
+        } catch (NumberFormatException ignored) {
+            return 1;
+        }
+    }
+
+    private static void printVertices(List<Vertex> vertices) {
+        for (Vertex vertex : vertices) {
+            System.out.println(vertex.getSong().getTitle() + " by " + vertex.getSong().getArtist());
         }
     }
 
@@ -152,13 +168,13 @@ public class Main {
 
         List<Vertex> matches = new ArrayList<>();
 
+        String normalizedQuery = query == null ? "" : query.trim().toLowerCase(java.util.Locale.ROOT);
         for (Vertex v : graph.getVertices()) {
 
-            String title = v.getSong().getTitle().toLowerCase();
-            String artist = v.getSong().getArtist().toLowerCase();
+            String title = v.getSong().getTitle().toLowerCase(java.util.Locale.ROOT);
+            String artist = v.getSong().getArtist().toLowerCase(java.util.Locale.ROOT);
 
-            if (title.contains(query.toLowerCase()) ||
-                    artist.contains(query.toLowerCase())) {
+            if (title.contains(normalizedQuery) || artist.contains(normalizedQuery)) {
 
                 matches.add(v);
             }

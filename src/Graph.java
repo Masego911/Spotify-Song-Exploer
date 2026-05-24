@@ -13,14 +13,20 @@ public class Graph {
     }
 
     public void addVertex(Vertex v) {
-        vertices.add(v);
-        adjacencyList.putIfAbsent(v, new ArrayList<>());
+        Objects.requireNonNull(v, "vertex");
+        if (!adjacencyList.containsKey(v)) {
+            vertices.add(v);
+            adjacencyList.put(v, new ArrayList<>());
+        }
     }
 
     public void addEdges(Vertex v1, Vertex v2) {
+        Objects.requireNonNull(v1, "first vertex");
+        Objects.requireNonNull(v2, "second vertex");
+        if (v1.equals(v2)) return;
 
-        adjacencyList.putIfAbsent(v1, new ArrayList<>());
-        adjacencyList.putIfAbsent(v2, new ArrayList<>());
+        addVertex(v1);
+        addVertex(v2);
 
         if (!adjacencyList.get(v1).contains(v2)) {
 
@@ -32,7 +38,7 @@ public class Graph {
     }
 
     public List<Vertex> getVertices() {
-        return vertices;
+        return Collections.unmodifiableList(vertices);
     }
 
     public Map<Vertex, List<Vertex>> getAdjacencyList() {

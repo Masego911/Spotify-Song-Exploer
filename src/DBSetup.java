@@ -15,32 +15,25 @@ public class DBSetup {
 
     public static void createTables() throws Exception {
 
-        Connection con = DBConnection.connect(); // connect to DB
+        try (Connection con = DBConnection.connect();
+             Statement stmt = con.createStatement()) {
+            stmt.execute("CREATE TABLE IF NOT EXISTS songs (" +
+                    "id INTEGER PRIMARY KEY," +
+                    "title TEXT NOT NULL," +
+                    "artist TEXT NOT NULL," +
+                    "streams INTEGER NOT NULL CHECK(streams >= 0)," +
+                    "genre TEXT NOT NULL DEFAULT 'Unknown'" +
+                    ")");
 
-        Statement stmt = con.createStatement(); // create SQL executor
-
-        // create songs table
-        String songsTable = "CREATE TABLE IF NOT EXISTS songs (" +
-                "id INTEGER PRIMARY KEY," +
-                "title TEXT," +
-                "artist TEXT," +
-                "streams INTEGER," +
-                "genre TEXT" +
-                ")";
-
-        stmt.execute(songsTable); // execute SQL
-
-        // create edges table
-        String edgesTable = "CREATE TABLE IF NOT EXISTS edges (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "from_song INTEGER," +
-                "to_song INTEGER," +
-                "FOREIGN KEY(from_song) REFERENCES songs(id)," +
-                "FOREIGN KEY(to_song) REFERENCES songs(id)" +
-                ")";
-
-        stmt.execute(edgesTable);
-
-        con.close(); // close connection
+            stmt.execute("CREATE TABLE IF NOT EXISTS edges (" +
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "from_song INTEGER NOT NULL," +
+                    "to_song INTEGER NOT NULL," +
+                    "UNIQUE(from_song, to_song)," +
+                    "FOREIGN KEY(from_song) REFERENCES songs(id) ON DELETE CASCADE," +
+                    "FOREIGN KEY(to_song) REFERENCES songs(id) ON DELETE CASCADE" +
+                    ")");
+            stmt.execute("CREATE INDEX IF NOT EXISTS idx_songs_artist ON songs(artist)");
+        }
     }
 }

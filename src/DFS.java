@@ -1,83 +1,44 @@
-import java.util.HashSet; // stores visited nodes
-import java.util.Set;     // interface for visited tracking
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
-/*
- * DFS (Depth-First Search)
- *
- * PURPOSE:
- * Traverse the graph safely without infinite recursion.
- *
- * GUARANTEES:
- * 1. Each node is visited once
- * 2. Recursion stops on revisits
- * 3. Traversal depth is bounded (prevents stack overflow)
- */
 public class DFS {
-
-    private Graph graph;         // reference to graph structure
-    private Set<Vertex> visited; // tracks visited nodes
-
-    // limit recursion depth to prevent stack overflow on large graphs
-    private static final int MAX_DEPTH = 1000;
+    private final Graph graph;
+    private final Set<Vertex> visited = new HashSet<>();
 
     public DFS(Graph graph) {
-        this.graph = graph;           // store graph reference
-        this.visited = new HashSet<>(); // initialise visited set
+        this.graph = graph;
     }
 
     public void dfs(Vertex start) {
-
-        visited.clear(); // reset visited before traversal
-
-        // start recursion with depth = 0
-        dfsVisited(start, 0);
+        for (Vertex vertex : traverse(start, Integer.MAX_VALUE)) {
+            System.out.println(vertex.getSong().getTitle() + " by " + vertex.getSong().getArtist());
+        }
     }
 
-    /*
-     * Recursive DFS method
-     *
-     * depth → tracks how deep recursion goes
-     */
-    private void dfsVisited(Vertex v, int depth) {
+    public List<Vertex> traverse(Vertex start, int maxVertices) {
+        if (start == null || maxVertices <= 0) return Collections.emptyList();
+        visited.clear();
+        List<Vertex> result = new ArrayList<>();
+        Deque<Vertex> stack = new ArrayDeque<>();
+        stack.push(start);
 
-        // -----------------------------------------
-        // 1. STOP CONDITIONS (CRITICAL)
-        // -----------------------------------------
+        while (!stack.isEmpty() && result.size() < maxVertices) {
+            Vertex current = stack.pop();
+            if (!visited.add(current)) continue;
+            result.add(current);
 
-        // stop if null node
-        if (v == null) return;
-
-        // stop if already visited (prevents cycles)
-        if (visited.contains(v)) return;
-
-        // stop if depth too large (prevents stack overflow)
-        if (depth > MAX_DEPTH) return;
-
-        // -----------------------------------------
-        // 2. MARK AS VISITED
-        // -----------------------------------------
-        visited.add(v);
-
-        // -----------------------------------------
-        // 3. PROCESS NODE
-        // -----------------------------------------
-        System.out.println(
-                v.getSong().getTitle() + " by " +
-                        v.getSong().getArtist()
-        );
-
-        // -----------------------------------------
-        // 4. GET NEIGHBOURS SAFELY
-        // -----------------------------------------
-        // adjacency list may return null if not initialised
-        if (!graph.getAdjacencyList().containsKey(v)) return;
-
-        // -----------------------------------------
-        // 5. RECURSE ON NEIGHBOURS
-        // -----------------------------------------
-        for (Vertex neighbour : graph.getAdjacencyList().get(v)) {
-
-            dfsVisited(neighbour, depth + 1); // go deeper
+            List<Vertex> neighbours = graph.getAdjacencyList()
+                    .getOrDefault(current, Collections.emptyList());
+            for (int i = neighbours.size() - 1; i >= 0; i--) {
+                Vertex neighbour = neighbours.get(i);
+                if (!visited.contains(neighbour)) stack.push(neighbour);
+            }
         }
+        return result;
     }
 }
