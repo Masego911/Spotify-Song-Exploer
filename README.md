@@ -456,12 +456,4 @@ It was developed as part of an ongoing software engineering and computational an
 
 Masego Madisha
 
-BCom Computer Science and Information Systems student exploring:
-
-* software engineering
-* graph analytics
-* recommendation systems
-* data science
-* machine learning
-* computational analytics
-* music technology systems
+BCom Computer Science and Information Systems student
