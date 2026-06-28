@@ -455,5 +455,4 @@ It was developed as part of an ongoing software engineering and computational an
 # Author
 
 Masego Madisha
-
 BCom Computer Science and Information Systems student

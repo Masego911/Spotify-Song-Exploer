@@ -33,6 +33,7 @@ public class Main {
             boolean importRequested = java.util.Arrays.asList(args).contains("--import");
             if (importRequested) {
                 ETLPipeline.run(filePath);
+
                 System.out.println("ETL complete.");
             }
 
@@ -104,7 +105,7 @@ public class Main {
 
             // -----------------------------------------
             // STEP 7: SHOW SELECTED SONG
-            // -----------------------------------------
+            // --------------------C:\Users\maseg\IdeaProjects\Spotify Song ExplorerC:\Users\maseg\IdeaProjects\Spotify Song Explorer---------------------
             System.out.println("\nStart Vertex: " +
                     start.getSong().getTitle() + " by " +
                     start.getSong().getArtist());
